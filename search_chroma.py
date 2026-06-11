@@ -23,11 +23,9 @@ def get_chroma_client():
         return chromadb.HttpClient(host=host, port=port)
 
 def get_chroma_collection(collection_name, chroma_client):
-    """Initialize a Chroma collection with the embedding function."""
-    chroma_collection = chroma_client.get_collection(
-        name=collection_name, 
-        embedding_function=get_embedding_function()
-    )
+    """Initialize a Chroma collection."""
+    # We do NOT pass the embedding function here to avoid conflicts with the persisted 'ollama' metadata
+    chroma_collection = chroma_client.get_collection(name=collection_name)
     print(f"Chroma collection '{collection_name}' initialized.")
     return chroma_collection
 
@@ -36,14 +34,18 @@ def search_chroma(query_text, collection_name="gmg_test_parent_products_mxbai", 
     chroma_client = get_chroma_client()
     chroma_collection = get_chroma_collection(collection_name, chroma_client)
     
+    # Compute the embedding manually
+    emb_fn = get_embedding_function()
+    query_embeddings = emb_fn([query_text])
+    
     where_filter = None
     if product_id:
         where_filter = {"core__id": product_id}
     
     if where_filter:
-        results = chroma_collection.query(query_texts=[query_text], n_results=n_results, where=where_filter)
+        results = chroma_collection.query(query_embeddings=query_embeddings, n_results=n_results, where=where_filter)
     else:
-        results = chroma_collection.query(query_texts=[query_text], n_results=n_results)
+        results = chroma_collection.query(query_embeddings=query_embeddings, n_results=n_results)
     
     print(f"Search results for query '{query_text}': {results}")
     return results
