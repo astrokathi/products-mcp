@@ -3,11 +3,9 @@ import chromadb
 from chromadb.utils import embedding_functions
 
 def get_embedding_function():
-    """Embedding function to use with Chroma."""
-    ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/embeddings")
-    return embedding_functions.OllamaEmbeddingFunction(
-        url=ollama_url,
-        model_name="mxbai-embed-large"
+    """Embedding function to use with Chroma, running locally without Ollama."""
+    return embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="mixedbread-ai/mxbai-embed-large-v1"
     )
 
 def get_chroma_client():

@@ -3,3 +3,4 @@ fastmcp
 ollama
 pymongo
 panel
+sentence-transformers
