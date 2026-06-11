@@ -1,0 +1,5 @@
+chromadb
+fastmcp
+ollama
+pymongo
+panel
