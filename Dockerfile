@@ -11,7 +11,7 @@ COPY main.py .
 COPY search_chroma.py .
 
 # Cache the embedding model during build time so it doesn't download on startup
-RUN python -c "from chromadb.utils import embedding_functions; embedding_functions.SentenceTransformerEmbeddingFunction(model_name='mixedbread-ai/mxbai-embed-large-v1')"
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='mixedbread-ai/mxbai-embed-large-v1')"
 
 # FastMCP normally communicates over stdin/stdout.
 # If running an HTTP transport, EXPOSE port here.

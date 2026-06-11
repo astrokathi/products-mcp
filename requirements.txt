@@ -1,6 +1,3 @@
 chromadb
 fastmcp
-ollama
-pymongo
-panel
-sentence-transformers
+fastembed

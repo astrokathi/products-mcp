@@ -1,12 +1,10 @@
 import os
 import chromadb
-from chromadb.utils import embedding_functions
+from fastembed import TextEmbedding
 
 def get_embedding_function():
     """Embedding function to use with Chroma, running locally without Ollama."""
-    return embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="mixedbread-ai/mxbai-embed-large-v1"
-    )
+    return TextEmbedding(model_name="mixedbread-ai/mxbai-embed-large-v1")
 
 def get_chroma_client():
     """Initialize and return the Chroma CloudClient (or HttpClient as fallback)."""
@@ -34,9 +32,9 @@ def search_chroma(query_text, collection_name="gmg_test_parent_products_mxbai", 
     chroma_client = get_chroma_client()
     chroma_collection = get_chroma_collection(collection_name, chroma_client)
     
-    # Compute the embedding manually
+    # Compute the embedding manually using FastEmbed
     emb_fn = get_embedding_function()
-    query_embeddings = emb_fn([query_text])
+    query_embeddings = [emb.tolist() for emb in emb_fn.embed([query_text])]
     
     where_filter = None
     if product_id:
