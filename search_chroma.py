@@ -1,10 +1,17 @@
 import os
 import chromadb
-from fastembed import TextEmbedding
+import voyageai
+from dotenv import load_dotenv
 
-def get_embedding_function():
-    """Embedding function to use with Chroma, running locally without Ollama."""
-    return TextEmbedding(model_name="mixedbread-ai/mxbai-embed-large-v1")
+# Load environment variables from .env file
+load_dotenv()
+
+def get_voyage_client():
+    """Initialize and return the VoyageAI client."""
+    api_key = os.environ.get("VOYAGE_API_KEY")
+    if not api_key:
+        print("Warning: VOYAGE_API_KEY not found in environment variables.")
+    return voyageai.Client(api_key=api_key)
 
 def get_chroma_client():
     """Initialize and return the Chroma CloudClient (or HttpClient as fallback)."""
@@ -22,19 +29,23 @@ def get_chroma_client():
 
 def get_chroma_collection(collection_name, chroma_client):
     """Initialize a Chroma collection."""
-    # We do NOT pass the embedding function here to avoid conflicts with the persisted 'ollama' metadata
+    # We do NOT pass the embedding function here to avoid conflicts
     chroma_collection = chroma_client.get_collection(name=collection_name)
     print(f"Chroma collection '{collection_name}' initialized.")
     return chroma_collection
 
-def search_chroma(query_text, collection_name="gmg_test_parent_products_mxbai", n_results=5, product_id=None):
+def search_chroma(query_text, collection_name=None, n_results=5, product_id=None):
     """Search products from Chroma with embeddings."""
+    if collection_name is None:
+        collection_name = os.environ.get("CHROMA_COLLECTION", "gmg_test_parent_products_voyage")
+
     chroma_client = get_chroma_client()
     chroma_collection = get_chroma_collection(collection_name, chroma_client)
     
-    # Compute the embedding manually using FastEmbed
-    emb_fn = get_embedding_function()
-    query_embeddings = [emb.tolist() for emb in emb_fn.embed([query_text])]
+    # Compute the embedding manually using VoyageAI
+    voyage_client = get_voyage_client()
+    voyage_model = os.environ.get("VOYAGE_MODEL", "voyage-4")
+    query_embeddings = voyage_client.embed([query_text], model=voyage_model).embeddings
     
     where_filter = None
     if product_id:
