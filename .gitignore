@@ -7,3 +7,5 @@ misc/
 .continue/
 chroma_data/
 node_modules/
+.DS_Store
+entities/

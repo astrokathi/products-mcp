@@ -1,4 +1,5 @@
 import os
+from time import sleep
 import chromadb
 from chromadb.utils import embedding_functions
 from mongo_docs import MongoDBHandler
@@ -58,7 +59,7 @@ def migrate_products_to_chroma(collection_name=None):
     _, _, _, total_count = handler.fetch_documents(query, page=1, page_size=1)
     print(f"Total documents matching query: {total_count}")
     
-    page_size = 100
+    page_size = 3
     total_pages = (total_count + page_size - 1) // page_size
 
     # Initialize Chroma collection
@@ -68,6 +69,8 @@ def migrate_products_to_chroma(collection_name=None):
         documents, metadatas, ids, _ = handler.fetch_documents(query, page=page, page_size=page_size)
         chroma_collection.add(documents=documents, metadatas=metadatas, ids=ids)
         print(f"Page {page}/{total_pages} migrated to Chroma.")
+        print(f"Waiting for a minute")
+        sleep(60)  # Sleep for a minute to avoid rate limits
 
 if __name__ == "__main__":
     migrate_products_to_chroma()

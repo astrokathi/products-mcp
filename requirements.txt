@@ -1,3 +1,4 @@
 chromadb
 fastmcp
-fastembed
+voyageai
+python-dotenv
