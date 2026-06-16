@@ -2,3 +2,5 @@ chromadb
 fastmcp
 voyageai
 python-dotenv
+pillow
+requests

@@ -1,5 +1,6 @@
 from fastmcp import FastMCP
 from search_chroma import search_chroma
+from embeddings import load_image, get_embedding_image, collection
 import json
 
 # Initialize FastMCP
@@ -36,6 +37,45 @@ def search_products(query: str, n_results: int = 5, product_id: str = None) -> s
         return json.dumps(formatted_results, indent=2)
     except Exception as e:
         return json.dumps({"error": str(e)})
+    
+@mcp.tool()
+def visual_search(image_source: str, top_k: int = 5) -> str:
+    """
+    Perform a visual semantic search to find similar products.
+    
+    Args:
+        image_source: Local file path or HTTP/HTTPS URL of the image.
+        top_k: Number of similar image results to return (default: 5).
+        
+    Returns:
+        A list of matching image URLs and their associated product IDs.
+    """
+    image = load_image(image_source)
+    if image is None:
+        return f"Failed to load image from source: {image_source[:100]}..."
+    
+    query_emb = get_embedding_image(image)
+    if query_emb is None:
+        return "Failed to generate embedding for the image using Voyage AI."
+    
+    results = collection.query(
+        query_embeddings=[query_emb.tolist()],
+        n_results=top_k,
+        include=["metadatas"]
+    )
+    
+    if not results or not results["metadatas"] or not results["metadatas"][0]:
+        return "No results found."
+        
+    metadatas = results["metadatas"][0]
+    
+    response_lines = ["Found the following matching images:"]
+    for i, meta in enumerate(metadatas):
+        path = meta.get("path", "Unknown path")
+        product_id = meta.get("product_id", "Unknown product")
+        response_lines.append(f"{i+1}. Product ID: {product_id} | Image URL: {path}")
+        
+    return "\n".join(response_lines)
 
 @mcp.prompt()
 def product_search_prompt() -> str:
