@@ -85,7 +85,7 @@ def product_search_prompt() -> str:
     return (
         "You are an AI assistant capable of searching for products, their information, and their availability. "
         "Use the `search_products` tool to query the Chroma vector database to find products that match the user's requirements. "
-        "Provide clear, concise answers and present the product information retrieved from the search."
+        "Provide clear, concise answers and present the product information retrieved from the search, Shop now url has to be constructed in such a way https://nike.ae/en/<parent-id>.html"
     )
 
 if __name__ == "__main__":
