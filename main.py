@@ -1,10 +1,25 @@
+import sys
+import builtins
+
+# Redirect all print calls globally to stderr to prevent corrupting the stdio MCP transport
+_original_print = builtins.print
+def stderr_print(*args, **kwargs):
+    kwargs.setdefault('file', sys.stderr)
+    kwargs.setdefault('flush', True)
+    _original_print(*args, **kwargs)
+builtins.print = stderr_print
+
+from typing import List
 from fastmcp import FastMCP
 from search_chroma import search_chroma
 from embeddings import load_image, get_embedding_image, collection
 import json
+import requests
+import os
 
 # Initialize FastMCP
 mcp = FastMCP("EcomServer")
+# 1. Define how to connect to the external STDIO server
 
 @mcp.tool()
 def search_products(query: str, n_results: int = 5, product_id: str = None) -> str:
@@ -76,6 +91,59 @@ def visual_search(image_source: str, top_k: int = 5) -> str:
         response_lines.append(f"{i+1}. Product ID: {product_id} | Image URL: {path}")
         
     return "\n".join(response_lines)
+
+
+@mcp.tool()
+def check_product_avaialability(product_ids: List[str]) -> str:
+    """
+    search for the products based on their IDs for thier availabiity in various locations
+    
+    Args:
+        product_ids: List of variant SKU ids.
+        
+    Returns:
+        A list of available stores with its name and onHand quantity for different products.
+    """
+    
+    fluent_secret = os.environ.get("FLUENT_SECRET", "top-secret")
+    fluent_base_url = os.environ.get("FLUENT_MCP_BASE_URL")
+    fluent_execute_graphql = os.environ.get("FLUENT_MCP_EXECUTE_GRAPHQL_URL")
+    url = f"{fluent_base_url}{fluent_execute_graphql}"
+    
+    # Safely convert list of IDs to double-quoted JSON array for GraphQL
+    ids_json = json.dumps(product_ids)
+    query = '{ inventoryPositions( catalogue: { ref: "DEFAULT:1" } productRef: {{product_ids}} ) { edges { node { productRef locationLink { name } onHand } } } }'
+    query = query.replace('{{product_ids}}', ids_json)
+
+    print(f"The final query that will be executed is: {query}")
+
+    headers = {
+        "Authorization": f"Bearer {fluent_secret}",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
+
+    payload = {
+        "query": query,
+        "operationName": None
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            print("Success!")
+            return json.dumps(response.json(), indent=2)
+        else:
+            print(f"Failed with status code: {response.status_code}")
+            return json.dumps({
+                "error": f"Failed with status code: {response.status_code}",
+                "details": response.text
+            }, indent=2)
+    except Exception as e:
+        print(f"Error calling availability API: {e}")
+        return json.dumps({"error": str(e)}, indent=2)
+
+
 
 @mcp.prompt()
 def product_search_prompt() -> str:
