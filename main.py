@@ -113,19 +113,19 @@ def check_product_avaialability(product_ids: List[str]) -> str:
     # Safely convert list of IDs to double-quoted JSON array for GraphQL
     ids_json = json.dumps(product_ids)
     query = '{ inventoryPositions( catalogue: { ref: "DEFAULT:1" } productRef: {{product_ids}} ) { edges { node { productRef locationLink { name } onHand } } } }'
-    query = query.replace('{{product_ids}}', ids_json)
+    query = query.replace('{{product_ids}}', ids_json).replace('"', '\\"')
 
     print(f"The final query that will be executed is: {query}")
 
     headers = {
         "Authorization": f"Bearer {fluent_secret}",
         "Content-Type": "application/json",
-        "Accept": "application/json"
+        "accept": "application/json"
     }
 
     payload = {
         "query": query,
-        "operationName": None
+        "operationName": "string"
     }
 
     try:
@@ -158,4 +158,5 @@ def product_search_prompt() -> str:
     )
 
 if __name__ == "__main__":
-    mcp.run()
+    # mcp.run()
+    check_product_avaialability(["193145343061"])
